@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h1 {
+    color: #333;
+  }
+  #status {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  #picture {
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+  }
+  #picture img {
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+<script>
+function renderBase64Image(base64String, targetElementId) {
+    // Create an image element
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + base64String;
+    
+    // When the image loads, add it to the target element
+    img.onload = function() {
+        const targetElement = document.getElementById(targetElementId);
+        if (targetElement) {
+            targetElement.innerHTML = '';
+            targetElement.appendChild(img);
+        } else {
+            console.error('Target element not found');
+        }
+    };
+
+    // Handle any errors
+    img.onerror = function() {
+        console.error('Error loading image');
+    };
+}
+
+function sendImage(event) {
+    event.preventDefault();
+
+    var fileInput = document.getElementById('myFile');
+    var file = fileInput.files[0];
+    var statusDiv = document.getElementById('status');
+
+    if (file) {
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            var base64Image = e.target.result.split(',')[1];
+
+            // Send the base64 image to the backend
+            fetch('/ingest_picture', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: base64Image })
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusDiv.textContent = 'Image uploaded successfully!';
+                statusDiv.style.color = 'green';
+                console.log(`Server response: ${JSON.stringify(data)}`);
+                renderBase64Image(data['success'], 'picture');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                statusDiv.textContent = 'Failed to upload image.';
+                statusDiv.style.color = 'red';
+            });
+        };
+
+        reader.onerror = function(error) {
+            console.error('Error reading file:', error);
+            statusDiv.textContent = 'Error reading file.';
+            statusDiv.style.color = 'red';
+        };
+
+        reader.readAsDataURL(file); // Convert the image to base64
+    } else {
+        statusDiv.textContent = 'Please select a file.';
+        statusDiv.style.color = 'red';
+    }
+}
+</script>
+</head>
+<body>
+
+  <h1>Image Upload</h1>
+  <p>Upload a picture:</p>
+  <form>
+    <input type="file" id="myFile" name="filename" accept="image/*">
+    <input type="submit" value="Upload" onclick="sendImage(event)">
+  </form>
+  <div id="status"></div>
+  <div id="picture"></div>
+  
+</body>
+</html>
