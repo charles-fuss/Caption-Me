@@ -1,3 +1,6 @@
 *.py
 *.md
+*.ipynb
 *.txt
+vscode/*
+training/*
